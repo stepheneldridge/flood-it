@@ -1,11 +1,12 @@
 # Stephen Eldridge
+from timeit import default_timer as now
 import copy
+import itertools
 import json
 import math
 import os
 import random
 import traceback
-from timeit import default_timer as now
 
 
 def runWisdomOfCrowds(width, height, colors, pipe, new_path=False):
@@ -243,9 +244,17 @@ class GeneticAlgorithm():
         return child
 
     def random_generation(self, count):
+        side = max(self.puzzle.width, self.puzzle.height)
+        solved = False
+        perms = list(map(list, itertools.permutations(self.puzzle.colors)))
         paths = []
-        for i in range(count):
-            paths.append([random.choice(self.puzzle.colors) for _ in range(random.randint(5, self.puzzle.width))])
+        while(len(paths) != count):
+            lst = []
+            for i in range(side * 2):
+                lst.append(random.choice(perms))
+            temp = self.puzzle.is_solved(lst)
+            if temp:
+                paths.append(temp)
         return paths
 
 
