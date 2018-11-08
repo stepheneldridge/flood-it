@@ -82,16 +82,24 @@ class Puzzle():
             return True
         return False
 
-    def get_solution_weight(self, solution):
+    def is_solved(self, solution):
         self.test_grid = copy.deepcopy(self.grid)
+        to_remove = []
+        size = self.width * self.height
         for index, color in enumerate(solution + [-1]):
             base_color = self.test_grid[0][0]
             if base_color == color:
+                to_remove.insert(0, index)
                 continue
             filled = self.flood_fill(0, 0, self.test_grid, base_color, color)
+            if filled == size:
+                solution = solution[:index + 1]
+                break
             if hasattr(self, 'update'):
                 self.update(Puzzle(self.colors, self.test_grid))
-        return filled / ((self.width * self.height) + len(solution))
+        for i in to_remove:
+            solution.pop(i)
+        return solution if filled == size else None
 
     def flood_fill(self, x, y, grid, base_color, new_color):
         count = 0
@@ -190,7 +198,7 @@ class GeneticAlgorithm():
         while generation <= gens:
             weights = []
             for path in paths:
-                weights.append(self.puzzle.get_solution_weight(path))
+                weights.append(1 / len(path))
             self.paths = paths
             best_path = paths[weights.index(max(weights))]
             self.puzzle.shortest_path = best_path
