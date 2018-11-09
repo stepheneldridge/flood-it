@@ -72,11 +72,6 @@ class Puzzle():
     def copy(self):
         return Puzzle(self.colors, self.grid)
 
-    def solve(self, solution, update):
-        self.update = update
-        self.get_solution_weight(solution)
-        self.grid = self.test_grid
-
     def change_color(self, grid, x, y, color, new_color):
         if x >= 0 and x < self.width and y >= 0 and y < self.height and grid[x][y] == color:
             grid[x][y] = new_color
@@ -86,6 +81,7 @@ class Puzzle():
     def is_solved(self, solution):
         self.test_grid = copy.deepcopy(self.grid)
         to_remove = []
+        last_filled = 0
         size = self.width * self.height
         for index, color in enumerate(solution + [-1]):
             base_color = self.test_grid[0][0]
@@ -93,11 +89,11 @@ class Puzzle():
                 to_remove.insert(0, index)
                 continue
             filled = self.flood_fill(0, 0, self.test_grid, base_color, color)
+            if last_filled == filled:
+                to_remove.insert(0, index - 1)
             if filled == size:
-                solution = solution[:index + 1]
+                solution = solution[0:index]
                 break
-            if hasattr(self, 'update'):
-                self.update(Puzzle(self.colors, self.test_grid))
         for i in to_remove:
             solution.pop(i)
         return solution if filled == size else None
@@ -128,8 +124,7 @@ class WisdomOfCrowds():
         self.start_time = now()
         self.update(self.puzzle)
         ga = GeneticAlgorithm(self.puzzle.copy(), update=self.update)
-        ga.run(100, 10)
-        self.puzzle.solve(ga.puzzle.shortest_path, self.update)
+        ga.run(100, 50)
         self.delta = now() - self.start_time
         return
         paths = []
@@ -221,45 +216,28 @@ class GeneticAlgorithm():
     def mutate(self, path, r=0):
         if random.random() < r:
             if random.random() < 0.5:
-                del path[random.randint(0, len(path) - 1)]
+                return  # del path[random.randint(0, len(path) - 1)]
             else:
                 path.insert(random.randint(0, len(path) + 1), random.choice(self.puzzle.colors))
 
+    def split(self, path):
+        offset = random.randint(0, len(path) - 1)
+        return [path[offset:], path[:offset]]
+
     def cross_parents(self, a, b):
-        child = [a[0]]
-        current = 0
-        a_index = 1
-        b_index = 0
-        while(True):
-            if current == 0:
-                if a_index >= len(a):
-                    break
-                if child[-1] != a[a_index]:
-                    child.append(a[a_index])
-                a_index += 1
-                if b_index < len(b) and child[-1] == b[b_index]:
-                    b_index += 1
-                    current = 1
-            else:
-                if b_index >= len(b):
-                    break
-                if child[-1] != b[b_index]:
-                    child.append(b[b_index])
-                b_index += 1
-                if a_index < len(a) and child[-1] == a[a_index]:
-                    a_index += 1
-                    current = 0
-        return child
+        _a = self.split(a)
+        _b = self.split(b)
+        child = _a[0] + _b[1] + _b[0] + _a[1]
+        return self.puzzle.is_solved(child)
 
     def random_generation(self, count):
         side = max(self.puzzle.width, self.puzzle.height)
-        solved = False
         perms = list(map(list, itertools.permutations(self.puzzle.colors)))
         paths = []
         while(len(paths) != count):
             lst = []
-            for i in range(side * 2):
-                lst.append(random.choice(perms))
+            for i in range(side):
+                lst.extend(random.choice(perms))
             temp = self.puzzle.is_solved(lst)
             if temp:
                 paths.append(temp)
