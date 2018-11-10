@@ -80,33 +80,72 @@ class Puzzle():
 
     def is_solved(self, solution):
         self.test_grid = copy.deepcopy(self.grid)
+        neighbors = [[0, 0]]
+        new_neighbors = []
+        base_color = self.test_grid[0][0]
         to_remove = []
-        last_filled = 0
-        size = self.width * self.height
-        for index, color in enumerate(solution + [-1]):
-            base_color = self.test_grid[0][0]
-            if base_color == color:
-                to_remove.insert(0, index)
-                continue
-            filled = self.flood_fill(0, 0, self.test_grid, base_color, color)
-            if last_filled == filled:
-                to_remove.insert(0, index - 1)
-            if filled == size:
-                solution = solution[0:index]
+        total = 0
+        added = 0
+        while True:
+            changed = False
+            for i in neighbors:
+                if self.test_grid[i[0]][i[1]] == -1:
+                    continue
+                if self.test_grid[i[0]][i[1]] == base_color:
+                    self.test_grid[i[0]][i[1]] = -1
+                    changed = True
+                    added += 1
+                    new_neighbors.extend(self.get_neighbors(*i))
+                else:
+                    new_neighbors.append(i)
+            if not changed:
                 break
+            neighbors = new_neighbors
+            new_neighbors = []
+        size = self.width * self.height
+        for index, color in enumerate(solution):
+            base_color = color
+            while True:
+                changed = False
+                for i in neighbors:
+                    if self.test_grid[i[0]][i[1]] == -1:
+                        continue
+                    if self.test_grid[i[0]][i[1]] == base_color:
+                        self.test_grid[i[0]][i[1]] = -1
+                        changed = True
+                        added += 1
+                        new_neighbors.extend(self.get_neighbors(*i))
+                    else:
+                        new_neighbors.append(i)
+                if not changed:
+                    break
+                neighbors = new_neighbors
+                new_neighbors = []
+            total += added
+            if added == 0:
+                to_remove.insert(0, index)
+            if total == size:
+                solution = solution[0:index + 1]
+                break
+            added = 0
         for i in to_remove:
             solution.pop(i)
-        return solution if filled == size else None
+        return solution if total == size else None
 
-    def flood_fill(self, x, y, grid, base_color, new_color):
-        count = 0
-        if self.change_color(grid, x, y, base_color, new_color):
-            count += 1
-            count += self.flood_fill(x + 1, y, grid, base_color, new_color)
-            count += self.flood_fill(x - 1, y, grid, base_color, new_color)
-            count += self.flood_fill(x, y + 1, grid, base_color, new_color)
-            count += self.flood_fill(x, y - 1, grid, base_color, new_color)
-        return count
+    def get_neighbors(self, x, y):
+        neighbors = []
+        if self.is_valid_neighbor(x + 1, y):
+            neighbors.append([x + 1, y])
+        if self.is_valid_neighbor(x - 1, y):
+            neighbors.append([x - 1, y])
+        if self.is_valid_neighbor(x, y + 1):
+            neighbors.append([x, y + 1])
+        if self.is_valid_neighbor(x, y - 1):
+            neighbors.append([x, y - 1])
+        return neighbors
+
+    def is_valid_neighbor(self, x, y):
+        return x >= 0 and x < self.width and y >= 0 and y < self.height
 
     @staticmethod
     def createGrid(width=10, height=10, colors=2):
@@ -124,7 +163,7 @@ class WisdomOfCrowds():
         self.start_time = now()
         self.update(self.puzzle)
         ga = GeneticAlgorithm(self.puzzle.copy(), update=self.update)
-        ga.run(100, 50)
+        ga.run(20, 100)
         self.delta = now() - self.start_time
         return
         paths = []
@@ -189,7 +228,7 @@ class GeneticAlgorithm():
     def run(self, size, gens):
         # array of path arrays
         paths = self.random_generation(size)
-        self.mutation_rate = 0.5
+        self.mutation_rate = 0.1
         generation = 1
         while generation <= gens:
             weights = []
@@ -215,10 +254,11 @@ class GeneticAlgorithm():
 
     def mutate(self, path, r=0):
         if random.random() < r:
-            if random.random() < 0.5:
+            if random.random() < 0.0:
                 return  # del path[random.randint(0, len(path) - 1)]
             else:
-                path.insert(random.randint(0, len(path) + 1), random.choice(self.puzzle.colors))
+                for i in range(random.randint(1, 10)):
+                    path.insert(random.randint(0, len(path) + 1), random.choice(self.puzzle.colors))
 
     def split(self, path):
         offset = random.randint(0, len(path) - 1)

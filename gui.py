@@ -42,7 +42,7 @@ class Window(Frame):
         self.addMessage("Running...")
         main_pipe, child_pipe = Pipe(False)
         # creates child process to run the algorithm outside of the gui process
-        process = Process(target=runWisdomOfCrowds, args=(20, 20, 3, child_pipe, False))
+        process = Process(target=runWisdomOfCrowds, args=(12, 12, 5, child_pipe, False))
         process.start()
         child_pipe.close()  # closes main processes instance of the child pipe
         while True:
