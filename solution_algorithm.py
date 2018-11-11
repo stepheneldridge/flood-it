@@ -78,56 +78,37 @@ class Puzzle():
             return True
         return False
 
+    def fill(self, n, color):
+        unchecked_neighbors = n
+        bad_neighbors = []
+        added = 0
+        while len(unchecked_neighbors) > 0:
+            neighbor = unchecked_neighbors.pop()
+            if self.test_grid[neighbor[0]][neighbor[1]] == -1:
+                continue
+            if self.test_grid[neighbor[0]][neighbor[1]] != color:
+                bad_neighbors.append(neighbor)
+                continue
+            self.test_grid[neighbor[0]][neighbor[1]] = -1
+            added += 1
+            unchecked_neighbors.extend(self.get_neighbors(*neighbor))
+        return bad_neighbors, added
+
     def is_solved(self, solution):
         self.test_grid = copy.deepcopy(self.grid)
         neighbors = [[0, 0]]
-        new_neighbors = []
         base_color = self.test_grid[0][0]
         to_remove = []
-        total = 0
-        added = 0
-        while True:
-            changed = False
-            for i in neighbors:
-                if self.test_grid[i[0]][i[1]] == -1:
-                    continue
-                if self.test_grid[i[0]][i[1]] == base_color:
-                    self.test_grid[i[0]][i[1]] = -1
-                    changed = True
-                    added += 1
-                    new_neighbors.extend(self.get_neighbors(*i))
-                else:
-                    new_neighbors.append(i)
-            if not changed:
-                break
-            neighbors = new_neighbors
-            new_neighbors = []
+        neighbors, total = self.fill(neighbors, base_color)
         size = self.width * self.height
         for index, color in enumerate(solution):
-            base_color = color
-            while True:
-                changed = False
-                for i in neighbors:
-                    if self.test_grid[i[0]][i[1]] == -1:
-                        continue
-                    if self.test_grid[i[0]][i[1]] == base_color:
-                        self.test_grid[i[0]][i[1]] = -1
-                        changed = True
-                        added += 1
-                        new_neighbors.extend(self.get_neighbors(*i))
-                    else:
-                        new_neighbors.append(i)
-                if not changed:
-                    break
-                neighbors = new_neighbors
-                new_neighbors = []
+            neighbors, added = self.fill(neighbors, color)
             total += added
             if added == 0:
                 to_remove.insert(0, index)
             if total == size:
                 solution = solution[0:index + 1]
                 break
-            added = 0
         for i in to_remove:
             solution.pop(i)
         return solution if total == size else None
@@ -276,7 +257,7 @@ class GeneticAlgorithm():
         paths = []
         while(len(paths) != count):
             lst = []
-            for i in range(side):
+            for i in range(5 * side):
                 lst.extend(random.choice(perms))
             temp = self.puzzle.is_solved(lst)
             if temp:
@@ -285,5 +266,9 @@ class GeneticAlgorithm():
 
 
 if __name__ == '__main__':  # starts the application and creates the window only if called from command line
-    from gui import init
-    init()
+    # from gui import init
+    # init()
+    from unittest.mock import Mock
+    print("DEBUG")
+    runWisdomOfCrowds(12, 12, 6, Mock(send=print), False)
+    print("DONE")
