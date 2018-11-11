@@ -144,7 +144,7 @@ class WisdomOfCrowds():
         self.start_time = now()
         self.update(self.puzzle)
         ga = GeneticAlgorithm(self.puzzle.copy(), update=self.update)
-        ga.run(20, 100)
+        ga.run(20, 10)
         self.delta = now() - self.start_time
         return
         paths = []
@@ -235,14 +235,11 @@ class GeneticAlgorithm():
 
     def mutate(self, path, r=0):
         if random.random() < r:
-            if random.random() < 0.0:
-                return  # del path[random.randint(0, len(path) - 1)]
-            else:
-                for i in range(random.randint(1, 10)):
-                    path.insert(random.randint(0, len(path) + 1), random.choice(self.puzzle.colors))
+            for i in range(random.randint(1, 10)):
+                path.insert(random.randint(0, len(path) + 1), random.choice(self.puzzle.colors))
 
     def split(self, path):
-        offset = random.randint(0, len(path) - 1)
+        offset = random.randint(1, len(path) - 1)
         return [path[offset:], path[:offset]]
 
     def cross_parents(self, a, b):
@@ -253,12 +250,11 @@ class GeneticAlgorithm():
 
     def random_generation(self, count):
         side = max(self.puzzle.width, self.puzzle.height)
-        perms = list(map(list, itertools.permutations(self.puzzle.colors)))
+        C = len(self.puzzle.colors)
+        upper_bound = int(math.ceil(2 * side + math.sqrt(2 * C) * side + C))
         paths = []
         while(len(paths) != count):
-            lst = []
-            for i in range(5 * side):
-                lst.extend(random.choice(perms))
+            lst = [random.randint(0, C) for _ in range(upper_bound)]
             temp = self.puzzle.is_solved(lst)
             if temp:
                 paths.append(temp)
