@@ -6,7 +6,10 @@ import json
 import math
 import os
 import random
+from statistics import mode
 import traceback
+from collections import Counter
+from difflib import SequenceMatcher
 
 
 def runWisdomOfCrowds(width, height, colors, pipe, new_path=False):
@@ -144,17 +147,17 @@ class WisdomOfCrowds():
         self.start_time = now()
         self.update(self.puzzle)
         ga = GeneticAlgorithm(self.puzzle.copy(), update=self.update)
-        ga.run(20, 10)
+        ga.run(10, 10)
         self.delta = now() - self.start_time
-        return
-        paths = []
-        for _ in range(100):  # runs 100 genetic algorithms
-            ga = GeneticAlgorithm(self.puzzle.copy())
-            ga.distances = self.distances
-            ga.run(10, 100)
-            print(ga.path.short_length)
-            paths.extend(self.dedupe(sorted(ga.paths, key=lambda a: a['length'])))
-        self.combine_paths(paths)
+        # paths = []
+        # for _ in range(10):  # runs 100 genetic algorithms
+        #     ga = GeneticAlgorithm(self.puzzle.copy())
+        #     #ga.distances = self.distances
+        #     ga.run(10, 100)
+        #     #print(ga.path.short_length)
+        #     #paths.extend(self.dedupe(sorted(ga.paths, key=lambda a: a['length'])))
+        print("ga.paths", ga.paths)
+        self.combine_paths(ga.paths)
 
     def dedupe(self, paths):  # removed duplicate paths
         unique = []
@@ -164,41 +167,28 @@ class WisdomOfCrowds():
         return unique
 
     def combine_paths(self, paths):
-        print(len(paths))  # how many paths were left after deduping
-        node = 1
-        self.path.short_path = [1]
-        length = len(self.path.keys)
-        unused = self.path.keys.copy()
-        unused.remove(1)
-        for _ in range(len(unused)):
-            counts = [0] * len(unused)
+        solution = []
+        while len(paths) > 0: # all([v != 0 for v in paths]):
+            first_value = []
             for i in paths:
-                index = i.index(node)
-                next_node = i[(index + 1) % length]
-                prev_node = i[index - 1]
-                if next_node in unused:  # counts the occurances of the next node amoung solutions
-                    counts[unused.index(next_node)] += 1
-                if prev_node in unused:
-                    counts[unused.index(prev_node)] += 1
-            node = unused[counts.index(max(counts))]
-            unused.remove(node)
-            self.path.short_path.append(node)
-        self.path.short_length = GeneticAlgorithm.get_path_length(self, self.path.short_path)
-        self.update(self.path)
-        print(self.path)
-
-    def distance(self, a, b):  # generic distance calculation
-        return math.sqrt(sum([(a[i] - b[i]) ** 2 for i in range(len(a))]))
-
-    def generate_lookup(self):
-        # creates 2D matrix to store precalculated distances
-        self.distances = {}
-        keys = self.path.keys
-        for i in keys:
-            self.distances[i] = {}
-            for j in keys:
-                if i != j:  # ignores distances to itself
-                    self.distances[i][j] = self.distance(self.path.nodes[i], self.path.nodes[j])
+                first_value.append(i[0])
+                # print("first_value", first_value)
+            first_node = Counter(first_value).most_common(1)[0][0]
+            solution.append(first_node)
+            for j in paths:
+                print("j", j)
+                if j[0] == first_node:
+                    j.pop(0)
+                    if len(j) == 0:
+                        paths.remove(j)
+            else:
+                continue
+        print("solution", solution)
+        solved = self.puzzle.is_solved(solution)
+        if solved == None:
+            print("No Solution")
+        else:
+            print("Final Solution: ", solved)
 
 
 class GeneticAlgorithm():
