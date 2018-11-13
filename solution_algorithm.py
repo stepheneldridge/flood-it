@@ -144,7 +144,7 @@ class WisdomOfCrowds():
         self.start_time = now()
         self.update(self.puzzle)
         ga = GeneticAlgorithm(self.puzzle.copy(), update=self.update)
-        ga.run(20, 10)
+        ga.run(50, 100)
         self.delta = now() - self.start_time
         return
         paths = []
@@ -239,13 +239,26 @@ class GeneticAlgorithm():
                 path.insert(random.randint(0, len(path) + 1), random.choice(self.puzzle.colors))
 
     def split(self, path):
-        offset = random.randint(1, len(path) - 1)
+        offset = random.randint(1, len(path) - 2)
         return [path[offset:], path[:offset]]
+
+    def lcs(self, a, b):
+        for i in range(len(a)):
+            match = True
+            for j in range(len(a) - i):
+                if j >= len(b):
+                    break
+                if a[i + j] != b[j]:
+                    match = False
+                    break
+            if match:
+                return a[0:i] + b
+        return a + b
 
     def cross_parents(self, a, b):
         _a = self.split(a)
         _b = self.split(b)
-        child = _a[0] + _b[1] + _b[0] + _a[1]
+        child = self.lcs(_a[0], _b[1]) + _b[0] + _a[1]
         return self.puzzle.is_solved(child)
 
     def random_generation(self, count):
