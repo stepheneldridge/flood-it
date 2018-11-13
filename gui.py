@@ -52,7 +52,6 @@ class Window(Frame):
                 break
             self.addMessage(puzzle)
             if isinstance(puzzle, list):
-                print(len(puzzle), puzzle)
                 continue
             elif not isinstance(puzzle, Puzzle):
                 break
