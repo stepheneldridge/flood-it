@@ -56,10 +56,10 @@ class Window(Frame):
             elif not isinstance(puzzle, Puzzle):
                 break
             self.canvas.delete("all")  # clears canvas to rerender
-            size = min(400 / len(puzzle.grid), 400 / len(puzzle.grid[0]))
-            colors = ["red", "green", "blue", "yellow", "purple", "orange", "cyan"]
+            size = min(400 / len(puzzle.grid), 400 / len(puzzle.grid[0]))  # adjusts tile size to fit canvas
+            colors = ["red", "green", "blue", "yellow", "purple", "orange", "cyan"]  # list of colors (can add more)
             for x, column in enumerate(puzzle.grid):
-                for y, color in enumerate(column):
+                for y, color in enumerate(column):  # fills canvas with correctly colored tiles
                     self.canvas.create_rectangle(x * size, y * size, x * size + size, y * size + size, fill=colors[color])
             self.master.update()
             sleep(1)  # frame delay
